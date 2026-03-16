@@ -192,7 +192,7 @@ def update(filepath):
         os.system(cmd)
 
     execute(
-        "wget https://github.com/yuchenlin/rebiber/archive/main.zip -O /tmp/rebiber.zip"
+        "wget https://github.com/lkaesberg/rebiber/archive/main.zip -O /tmp/rebiber.zip"
     )
     execute("unzip -o /tmp/rebiber.zip -d /tmp/")
     execute(f"cp /tmp/rebiber-main/rebiber/bib_list.txt {filepath}/bib_list.txt")
