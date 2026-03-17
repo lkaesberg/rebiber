@@ -55,12 +55,42 @@ jobs:
           gunzip -f raw_data/anthology.bib.gz
           echo "Converting ACL Anthology bib to JSON..."
           python bib2json.py -i raw_data/anthology.bib -o data/acl.json
+          echo "Splitting acl.json to stay under GitHub's 100 MB file limit..."
+          python -c "
+import json, math, os
+
+with open('data/acl.json') as f:
+    data = json.load(f)
+
+for old in [f for f in os.listdir('data') if f.startswith('acl_') and f.endswith('.json')]:
+    os.remove(f'data/{old}')
+
+items = list(data.items())
+chunk_size = 50000
+num_chunks = math.ceil(len(items) / chunk_size)
+
+for i in range(num_chunks):
+    chunk = dict(items[i*chunk_size:(i+1)*chunk_size])
+    fname = f'data/acl_{i+1}.json'
+    with open(fname, 'w') as f:
+        json.dump(chunk, f, indent=2)
+    print(f'Created {fname} with {len(chunk)} entries')
+
+os.remove('data/acl.json')
+
+with open('bib_list.txt') as f:
+    lines = [l for l in f.readlines() if l.strip() and l.strip() != 'data/acl.json' and not l.strip().startswith('data/acl_')]
+for i in range(num_chunks):
+    lines.append(f'data/acl_{i+1}.json\n')
+with open('bib_list.txt', 'w') as f:
+    f.writelines(lines)
+"
 
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add rebiber/data/ rebiber/bib_list.txt
+          git add -A rebiber/data/ rebiber/bib_list.txt
           if git diff --staged --quiet; then
             echo "No new conference data found"
           else
